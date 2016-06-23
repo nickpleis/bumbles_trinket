@@ -128,13 +128,14 @@ namespace bumblesLights {
     return strip;
   }
 
-  void showDebugLight(uint8_t r, uint8_t g, uint8_t b) {
+  void showDebugLight(uint8_t r, uint8_t g, uint8_t b, unsigned long duration) {
     Adafruit_NeoPixel ministrip = Adafruit_NeoPixel(1, STRIP_PIN, NEO_GRB + NEO_KHZ800);
     ministrip.begin();
 
     bool on = false;
-    while (1)
-    {
+    unsigned long started = millis();
+
+    while((millis() - started) < duration) {
       if(on) {
         ministrip.setPixelColor(0, r, g, b);
       } else {
@@ -270,10 +271,11 @@ namespace bumblesButtons {
 
   bool isPressed(Button* button) {
     byte reading = digitalRead(button->pin);
-    if(button->pin == 1 && reading > 0) {
-      bumblesLights::showDebugLight(0, 255, 0);
-    } else if(button->pin == 2 && reading > 0) {
-      bumblesLights::showDebugLight(0, 0, 255);
+
+    if(button->pin == 1 && reading == HIGH) {
+      bumblesLights::showDebugLight(0, 255, 0, 5000);
+    } else if(button->pin == 2 && reading == HIGH) {
+      bumblesLights::showDebugLight(0, 0, 255, 5000);
     }
 
     // check to see if you just pressed the button
@@ -311,7 +313,7 @@ void setup() {
   g_button4 = bumblesButtons::initButton(4);
  
   if(!g_strip->neoPixel.getPixels()) {
-    bumblesLights::showDebugLight(255, 0, 0);
+    bumblesLights::showDebugLight(255, 0, 0, 0xFFFFFFFF);
   }
 }
 
