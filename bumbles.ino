@@ -272,15 +272,12 @@ namespace bumblesButtons {
   bool isPressed(Button* button) {
     byte reading = digitalRead(button->pin);
 
-    if(button->pin == 1 && reading == HIGH) {
-      bumblesLights::showDebugLight(0, 255, 0, 5000);
-    } else if(button->pin == 2 && reading == HIGH) {
-      bumblesLights::showDebugLight(0, 0, 255, 5000);
-    }
-
-    // check to see if you just pressed the button
-    // (i.e. the input went from LOW to HIGH),  and you've waited
-    // long enough since the last press to ignore any noise:  
+    // The idea here is to make sure that this is a "real" button press
+    // not some accidental voltage across the pin. To do that we always
+    // set a `lastOffTime` everytime we come through and the voltage is
+    // LOW on that pin. Then when the voltage moves to HIGH, we simply
+    // check to see if enough time has passed before we return true
+    // signifying that the button has been pressed.
     if (reading == HIGH) {
       if ((millis() - button->lastOffTime) > DEBOUNCE_DELAY) {
         return true;
