@@ -272,6 +272,8 @@ namespace bumblesButtons {
     byte reading = digitalRead(button->pin);
     if(button->pin == 1 && reading > 0) {
       bumblesLights::showDebugLight(0, 255, 0);
+    } else if(button->pin == 2 && reading > 0) {
+      bumblesLights::showDebugLight(0, 0, 255);
     }
 
     // check to see if you just pressed the button
