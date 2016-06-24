@@ -73,39 +73,42 @@ namespace bumblesLights {
     MODE_MAX
   } MODE;
 
-  typedef struct {
-    Adafruit_NeoPixel neoPixel;
+  class LightStrip {
+    public:
+      Adafruit_NeoPixel neoPixel;
 
-    byte peak;
-    byte mode;
-    byte reverse;
-    byte dotCount;
-    byte volCount;
-    int vol[SAMPLES];
-    int lvl;
-    int minLvlAvg;
-    int maxLvlAvg;
-    long lastTime;
-  } LightStrip;
+      byte peak;
+      byte mode;
+      byte reverse;
+      byte dotCount;
+      byte volCount;
+      int vol[SAMPLES];
+      int lvl;
+      int minLvlAvg;
+      int maxLvlAvg;
+      long lastTime;
 
-  void resetStrip(LightStrip* strip) {
-    strip->mode = MODE_OFF;
-    strip->peak = 0;
-    strip->reverse = 0;
-    strip->dotCount = 0;
-    strip->volCount = 0;
-    strip->lvl = 10;
-    strip->minLvlAvg = 0;
-    strip->maxLvlAvg = 512;
-    strip->lastTime = 0;
+      void init();
+      void reset();
+  };
 
-    memset(strip->vol, 0, sizeof(strip->vol));
+  void LightStrip::reset() {
+    this->peak = 0;
+    this->reverse = 0;
+    this->dotCount = 0;
+    this->volCount = 0;
+    this->lvl = 10;
+    this->minLvlAvg = 0;
+    this->maxLvlAvg = 512;
+    this->lastTime = 0;
+
+    memset(this->vol, 0, sizeof(this->vol));
   }
 
-  LightStrip* initStrip() {
-    LightStrip* strip = new LightStrip;
-    resetStrip(strip);
-
+  void LightStrip::init() {
+    this->reset();
+    this->mode = MODE_OFF;
+    
     // Parameter 1 = number of pixels in strip
     // Parameter 2 = pin number (most are valid)
     // Parameter 3 = pixel type flags, add toPlease choose the Ardunio Application Folder.gether as needed:
@@ -113,7 +116,7 @@ namespace bumblesLights {
     //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
     //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
     //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-    strip->neoPixel = Adafruit_NeoPixel(N_PIXELS, STRIP_PIN, NEO_GRB + NEO_KHZ800);
+    this->neoPixel = Adafruit_NeoPixel(N_PIXELS, STRIP_PIN, NEO_GRB + NEO_KHZ800);
   
     // This is only needed on 5V Arduinos (Uno, Leonardo, etc.).
     // Connect 3.3V to mic AND TO AREF ON ARDUINO and enable this
@@ -121,11 +124,9 @@ namespace bumblesLights {
     // COMMENT OUT THIS LINE FOR 3.3V ARDUINOS (FLORA, ETC.):
     // analogReference(EXTERNAL);
 
-    strip->neoPixel.begin();
-    strip->neoPixel.setBrightness(30);
-    strip->neoPixel.show(); // Initialize all pixels to 'off'
-
-    return strip;
+    this->neoPixel.begin();
+    this->neoPixel.setBrightness(30);
+    this->neoPixel.show(); // Initialize all pixels to 'off'
   }
 
   void showDebugLight(uint8_t r, uint8_t g, uint8_t b, unsigned long duration) {
@@ -290,23 +291,19 @@ namespace bumblesLights {
 }
 
 namespace bumblesButtons {
-  typedef struct {
-    int pin;
-    byte lastOffTime; // the previous reading from the input pin
-  } Button;
+  class Button {
+    public:
+     int pin;
+     long lastOffTime; // the previous reading from the input pin
 
-  Button* initButton(int pin) {
-    Button* button = new Button;
-    button->pin = pin;
-    button->lastOffTime = 0;
+     void init(int pin, bumblesLights::LightStrip* strip);
+  };
+
+  void Button::init(int pin, bumblesLights::LightStrip* strip) {
+    this->pin = pin;
+    this->lastOffTime = millis();
 
     pinMode(pin, INPUT);
-
-    return button;
-  }
-
-  void setupButton(Button button) {
-    pinMode(button.pin, INPUT);
   }
 
   bool isPressed(Button* button) {
@@ -320,9 +317,8 @@ namespace bumblesButtons {
     // signifying that the button has been pressed.
 
     if (reading == HIGH) {
-      if ((millis() - button->lastOffTime) > DEBOUNCE_DELAY) {
-        //return true;
-        return false;
+      if((millis() - button->lastOffTime) > DEBOUNCE_DELAY) {
+        return true;
       }
     } else {
       button->lastOffTime = millis();
@@ -332,35 +328,35 @@ namespace bumblesButtons {
   }
 }
 
-bumblesButtons::Button* g_button1;
+bumblesButtons::Button g_button1;
 // bumblesButtons::Button* g_button2;
 // bumblesButtons::Button* g_button3;
 // bumblesButtons::Button* g_button4;
 
-bumblesLights::LightStrip* g_strip;
+bumblesLights::LightStrip g_strip;
 
 void setup() {
   // initialize trinket to run at 16MHz
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
  
-  g_strip = bumblesLights::initStrip();
-  g_strip->mode = bumblesLights::MODE_WIPE_BLUE;
+  g_strip.init();
+  g_strip.mode = bumblesLights::MODE_DOT_UP;
 
-  g_button1 = bumblesButtons::initButton(1);
+  g_button1.init(1, &g_strip);
   // g_button2 = bumblesButtons::initButton(2);
   // g_button3 = bumblesButtons::initButton(3);
   // g_button4 = bumblesButtons::initButton(4);
  
-  if(!g_strip->neoPixel.getPixels()) {
+  if(!g_strip.neoPixel.getPixels()) {
     bumblesLights::showDebugLight(255, 0, 0, 0xFFFFFFFF);
   }
 }
 
 void loop() {
-  byte oldMode = g_strip->mode;
+  byte oldMode = g_strip.mode;
 
-  if(bumblesButtons::isPressed(g_button1)) {
-    g_strip->mode = bumblesLights::MODE_RAINBOW;
+  if(bumblesButtons::isPressed(&g_button1)) {
+    g_strip.mode = bumblesLights::MODE_WIPE_MAGENTA;
   } //else if(bumblesButtons::isPressed(g_button2)) {
   //   g_strip->mode = bumblesLights::MODE_DOT_DOWN;
   // } else if(bumblesButtons::isPressed(g_button3)) {
@@ -369,9 +365,9 @@ void loop() {
   //   g_strip->mode = bumblesLights::MODE_OFF;
   // }
 
-  // if(g_strip->mode != oldMode) {
-  //   bumblesLights::resetStrip(g_strip);
-  // }
+  if(g_strip.mode != oldMode) {
+    g_strip.reset();
+  }
 
-  bumblesLights::drawPattern(g_strip);
+  bumblesLights::drawPattern(&g_strip);
 }
