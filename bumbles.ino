@@ -265,6 +265,26 @@ namespace bumblesLights {
       case MODE_WIPE_RED:
         colorWipe(strip, 255, 0, 0);
         break;
+
+      case MODE_WIPE_GREEN:
+        colorWipe(strip, 0, 255, 0);
+        break;
+   
+      case MODE_WIPE_BLUE:
+        colorWipe(strip, 0, 0, 255);
+        break;
+   
+      case MODE_WIPE_YELLOW:
+        colorWipe(strip, 255, 255, 0);
+        break;
+   
+      case MODE_WIPE_CYAN:
+        colorWipe(strip, 0, 255, 255);
+        break;
+   
+      case MODE_WIPE_MAGENTA:
+        colorWipe(strip, 255, 0, 255);
+      break;
     }
   }
 }
@@ -299,14 +319,14 @@ namespace bumblesButtons {
     // check to see if enough time has passed before we return true
     // signifying that the button has been pressed.
 
-    // if (reading == HIGH) {
-    //   if ((millis() - button->lastOffTime) > DEBOUNCE_DELAY) {
-    //     bumblesLights::showDebugLight(0, 255, 255, 2000);
-    //     return true;
-    //   }
-    // } else {
-    //   button->lastOffTime = millis();
-    // }
+    if (reading == HIGH) {
+      // if ((millis() - button->lastOffTime) > DEBOUNCE_DELAY) {
+      //   bumblesLights::showDebugLight(0, 255, 255, 2000);
+      //   return true;
+      // }
+    } else {
+      button->lastOffTime = millis();
+    }
 
     return false;
   }
@@ -324,7 +344,7 @@ void setup() {
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
  
   g_strip = bumblesLights::initStrip();
-  g_strip->mode = bumblesLights::MODE_WIPE_RED;
+  g_strip->mode = bumblesLights::MODE_WIPE_GREEN;
 
   g_button1 = bumblesButtons::initButton(1);
   // g_button2 = bumblesButtons::initButton(2);
