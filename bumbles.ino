@@ -320,10 +320,10 @@ namespace bumblesButtons {
     // signifying that the button has been pressed.
 
     if (reading == HIGH) {
-      // if ((millis() - button->lastOffTime) > DEBOUNCE_DELAY) {
-      //   bumblesLights::showDebugLight(0, 255, 255, 2000);
-      //   return true;
-      // }
+      if ((millis() - button->lastOffTime) > DEBOUNCE_DELAY) {
+        //return true;
+        return false;
+      }
     } else {
       button->lastOffTime = millis();
     }
@@ -344,7 +344,7 @@ void setup() {
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
  
   g_strip = bumblesLights::initStrip();
-  g_strip->mode = bumblesLights::MODE_WIPE_GREEN;
+  g_strip->mode = bumblesLights::MODE_WIPE_BLUE;
 
   g_button1 = bumblesButtons::initButton(1);
   // g_button2 = bumblesButtons::initButton(2);
