@@ -303,7 +303,7 @@ void setup() {
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
  
   g_strip = bumblesLights::initStrip();
-  g_strip->mode = bumblesLights::MODE_RAINBOW;
+  g_strip->mode = bumblesLights::MODE_DOT_DOWN;
 
   g_button1 = bumblesButtons::initButton(1);
   // g_button2 = bumblesButtons::initButton(2);
@@ -318,9 +318,9 @@ void setup() {
 void loop() {
   byte oldMode = g_strip->mode;
 
-  // if(bumblesButtons::isPressed(g_button1)) {
-  //   g_strip->mode = bumblesLights::MODE_RAINBOW;
-  // } //else if(bumblesButtons::isPressed(g_button2)) {
+  if(bumblesButtons::isPressed(g_button1)) {
+    g_strip->mode = bumblesLights::MODE_RAINBOW;
+  } //else if(bumblesButtons::isPressed(g_button2)) {
   //   g_strip->mode = bumblesLights::MODE_DOT_DOWN;
   // } else if(bumblesButtons::isPressed(g_button3)) {
   //   g_strip->mode = bumblesLights::MODE_RAINBOW;
