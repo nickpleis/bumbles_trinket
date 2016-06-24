@@ -290,7 +290,7 @@ namespace bumblesButtons {
   }
 }
 
-// bumblesButtons::Button* g_button1;
+bumblesButtons::Button* g_button1;
 // bumblesButtons::Button* g_button2;
 // bumblesButtons::Button* g_button3;
 // bumblesButtons::Button* g_button4;
@@ -304,7 +304,7 @@ void setup() {
   g_strip = bumblesLights::initStrip();
   g_strip->mode = bumblesLights::MODE_DOT_UP;
 
-  // g_button1 = bumblesButtons::initButton(1);
+  g_button1 = bumblesButtons::initButton(1);
   // g_button2 = bumblesButtons::initButton(2);
   // g_button3 = bumblesButtons::initButton(3);
   // g_button4 = bumblesButtons::initButton(4);
