@@ -228,6 +228,22 @@ namespace bumblesLights {
     }
   }
 
+  void colorWipe(LightStrip* strip, uint8_t r, uint8_t g, uint8_t b)
+  {
+    if (millis() - strip->lastTime >= DOT_RUN_MILLIS) {
+      strip->lastTime = millis();
+   
+      strip->neoPixel.setPixelColor(strip->peak, r, g, b);
+      strip->neoPixel.show();
+   
+      if(strip->peak >= LAST_PIXEL_OFFSET) {
+        strip->peak = 0;
+      } else {
+        strip->peak++;
+      }
+    }
+  }
+
   void drawPattern(LightStrip* strip) {
     switch(strip->mode) {
       case MODE_OFF:
@@ -244,6 +260,10 @@ namespace bumblesLights {
 
       case MODE_RAINBOW:
         rainbow(strip);
+        break;
+
+      case MODE_WIPE_RED:
+        colorWipe(strip, 255, 0, 0);
         break;
     }
   }
@@ -278,14 +298,15 @@ namespace bumblesButtons {
     // LOW on that pin. Then when the voltage moves to HIGH, we simply
     // check to see if enough time has passed before we return true
     // signifying that the button has been pressed.
-    if (reading == HIGH) {
-      if ((millis() - button->lastOffTime) > DEBOUNCE_DELAY) {
-        bumblesLights::showDebugLight(0, 255, 255, 2000);
-        return true;
-      }
-    } else {
-      button->lastOffTime = millis();
-    }
+
+    // if (reading == HIGH) {
+    //   if ((millis() - button->lastOffTime) > DEBOUNCE_DELAY) {
+    //     bumblesLights::showDebugLight(0, 255, 255, 2000);
+    //     return true;
+    //   }
+    // } else {
+    //   button->lastOffTime = millis();
+    // }
 
     return false;
   }
@@ -303,7 +324,7 @@ void setup() {
   if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
  
   g_strip = bumblesLights::initStrip();
-  g_strip->mode = bumblesLights::MODE_DOT_DOWN;
+  g_strip->mode = bumblesLights::MODE_WIPE_RED;
 
   g_button1 = bumblesButtons::initButton(1);
   // g_button2 = bumblesButtons::initButton(2);
