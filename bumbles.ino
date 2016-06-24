@@ -280,6 +280,7 @@ namespace bumblesButtons {
     // signifying that the button has been pressed.
     if (reading == HIGH) {
       if ((millis() - button->lastOffTime) > DEBOUNCE_DELAY) {
+        bumblesLights::showDebugLight(0, 255, 255, 2000);
         return true;
       }
     } else {
@@ -317,9 +318,9 @@ void setup() {
 void loop() {
   byte oldMode = g_strip->mode;
 
-  if(bumblesButtons::isPressed(g_button1)) {
-    g_strip->mode = bumblesLights::MODE_RAINBOW;
-  } //else if(bumblesButtons::isPressed(g_button2)) {
+  // if(bumblesButtons::isPressed(g_button1)) {
+  //   g_strip->mode = bumblesLights::MODE_RAINBOW;
+  // } //else if(bumblesButtons::isPressed(g_button2)) {
   //   g_strip->mode = bumblesLights::MODE_DOT_DOWN;
   // } else if(bumblesButtons::isPressed(g_button3)) {
   //   g_strip->mode = bumblesLights::MODE_RAINBOW;
