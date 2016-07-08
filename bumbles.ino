@@ -361,11 +361,11 @@ void loop() {
   byte oldMode = g_strip.mode;
 
   if(bumblesButtons::isPressed(&g_button1)) {
-    g_strip.mode = bumblesLights::MODE_WIPE_MAGENTA;
-  } else if(bumblesButtons::isPressed(&g_button2)) {
-     g_strip.mode = bumblesLights::MODE_DOT_DOWN;
-  } else if(bumblesButtons::isPressed(&g_button3)) {
     g_strip.mode = bumblesLights::MODE_RAINBOW;
+  } else if(bumblesButtons::isPressed(&g_button2)) {
+     g_strip.mode = bumblesLights::MODE_WIPE_RED;
+  } else if(bumblesButtons::isPressed(&g_button3)) {
+    g_strip.mode = bumblesLights::MODE_WIPE_BLUE;
   } //else if(bumblesButtons::isPressed(&g_button4)) {
   //   g_strip.mode = bumblesLights::MODE_OFF;
   // }
