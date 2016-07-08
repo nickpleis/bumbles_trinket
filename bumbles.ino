@@ -43,12 +43,14 @@ Written by Adafruit Industries. Distributed under the BSD license.
 This paragraph must be included in any redistribution.
 */
 
+//#include <string>
+
 #include <avr/power.h>
 #include <Adafruit_NeoPixel.h>
 #include "Adafruit_NeoPixel.h"
 
-#define N_PIXELS   50  // Number of pixels in strand
-#define STRIP_PIN  0  // NeoPixel LED strand is connected to this pin
+#define N_PIXELS   24  // Number of pixels in strand
+#define STRIP_PIN  4  // NeoPixel LED strand is connected to this pin
 #define SAMPLES   30  // Length of buffer for dynamic level adjustment
 #define DOT_RUN_MILLIS 40
 #define LAST_PIXEL_OFFSET N_PIXELS-1
@@ -308,6 +310,7 @@ namespace bumblesButtons {
 
   bool isPressed(Button* button) {
     byte reading = digitalRead(button->pin);
+    //Serial.println("Pin: " + String(button->pin) + ", Reading: " + String(reading));
 
     // The idea here is to make sure that this is a "real" button press
     // not some accidental voltage across the pin. To do that we always
@@ -317,7 +320,10 @@ namespace bumblesButtons {
     // signifying that the button has been pressed.
 
     if (reading == HIGH) {
+      //Serial.println("Pin: " + String(button->pin) + " reading == HIGH");
+
       if((millis() - button->lastOffTime) > DEBOUNCE_DELAY) {
+        //Serial.println("TRUE!!");
         return true;
       }
     } else {
@@ -329,23 +335,22 @@ namespace bumblesButtons {
 }
 
 bumblesButtons::Button g_button1;
-// bumblesButtons::Button* g_button2;
-// bumblesButtons::Button* g_button3;
-// bumblesButtons::Button* g_button4;
+bumblesButtons::Button g_button2;
+bumblesButtons::Button g_button3;
+bumblesButtons::Button g_button4;
 
 bumblesLights::LightStrip g_strip;
 
 void setup() {
-  // initialize trinket to run at 16MHz
-  if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
- 
+  //Serial.begin(9600); // USB is always 12 Mbit/sec
+
   g_strip.init();
   g_strip.mode = bumblesLights::MODE_DOT_UP;
 
-  g_button1.init(1, &g_strip);
-  // g_button2 = bumblesButtons::initButton(2);
-  // g_button3 = bumblesButtons::initButton(3);
-  // g_button4 = bumblesButtons::initButton(4);
+  g_button1.init(0, &g_strip);
+  g_button2.init(1, &g_strip);
+  g_button3.init(2, &g_strip);
+  //g_button4.init(, &g_strip);
  
   if(!g_strip.neoPixel.getPixels()) {
     bumblesLights::showDebugLight(255, 0, 0, 0xFFFFFFFF);
@@ -357,17 +362,23 @@ void loop() {
 
   if(bumblesButtons::isPressed(&g_button1)) {
     g_strip.mode = bumblesLights::MODE_WIPE_MAGENTA;
-  } //else if(bumblesButtons::isPressed(g_button2)) {
-  //   g_strip->mode = bumblesLights::MODE_DOT_DOWN;
-  // } else if(bumblesButtons::isPressed(g_button3)) {
-  //   g_strip->mode = bumblesLights::MODE_RAINBOW;
-  // } else if(bumblesButtons::isPressed(g_button4)) {
-  //   g_strip->mode = bumblesLights::MODE_OFF;
+  } else if(bumblesButtons::isPressed(&g_button2)) {
+     g_strip.mode = bumblesLights::MODE_DOT_DOWN;
+  } else if(bumblesButtons::isPressed(&g_button3)) {
+    g_strip.mode = bumblesLights::MODE_RAINBOW;
+  } //else if(bumblesButtons::isPressed(&g_button4)) {
+  //   g_strip.mode = bumblesLights::MODE_OFF;
   // }
 
+  //Serial.println("MODE: " + String(g_strip.mode) + " " + String(oldMode));
+
   if(g_strip.mode != oldMode) {
+    //Serial.println("MODE CHANGED");
     g_strip.reset();
   }
 
   bumblesLights::drawPattern(&g_strip);
+  //Serial.println("Loop");
+
+  //delay(300);  // do not print too fast!
 }
