@@ -43,254 +43,18 @@ Written by Adafruit Industries. Distributed under the BSD license.
 This paragraph must be included in any redistribution.
 */
 
-//#include <string>
-
 #include <avr/power.h>
 #include <Adafruit_NeoPixel.h>
 #include "Adafruit_NeoPixel.h"
 
-#define N_PIXELS   24  // Number of pixels in strand
-#define STRIP_PIN  4  // NeoPixel LED strand is connected to this pin
-#define SAMPLES   30  // Length of buffer for dynamic level adjustment
-#define DOT_RUN_MILLIS 40
-#define LAST_PIXEL_OFFSET N_PIXELS-1
+#include "include/light_strip.h"
+#include "include/bumbles_neo_pixel.h"
+
 #define DEBOUNCE_DELAY 50  // the debounce time; increase if the output flickers
 
-namespace bumblesLights {
-  enum 
-  {
-    MODE_OFF,
-    MODE_VUMETER,
-    MODE_DOT_UP,
-    MODE_DOT_DOWN,
-    MODE_DOT_ZIGZAG,
-    MODE_RAINBOW,
-    MODE_RAINBOW_CYCLE,
-    MODE_WIPE_RED,
-    MODE_WIPE_GREEN,
-    MODE_WIPE_BLUE,
-    MODE_WIPE_YELLOW,
-    MODE_WIPE_CYAN,
-    MODE_WIPE_MAGENTA,
-    MODE_MAX
-  } MODE;
-
-  class LightStrip {
-    public:
-      Adafruit_NeoPixel neoPixel;
-
-      byte peak;
-      byte mode;
-      byte reverse;
-      byte dotCount;
-      byte volCount;
-      int vol[SAMPLES];
-      int lvl;
-      int minLvlAvg;
-      int maxLvlAvg;
-      long lastTime;
-
-      void init();
-      void reset();
-  };
-
-  void LightStrip::reset() {
-    this->peak = 0;
-    this->reverse = 0;
-    this->dotCount = 0;
-    this->volCount = 0;
-    this->lvl = 10;
-    this->minLvlAvg = 0;
-    this->maxLvlAvg = 512;
-    this->lastTime = 0;
-
-    memset(this->vol, 0, sizeof(this->vol));
-  }
-
-  void LightStrip::init() {
-    this->reset();
-    this->mode = MODE_OFF;
-    
-    // Parameter 1 = number of pixels in strip
-    // Parameter 2 = pin number (most are valid)
-    // Parameter 3 = pixel type flags, add toPlease choose the Ardunio Application Folder.gether as needed:
-    //   NEO_KHZ800  800 KHz bitstream (most NeoPixel products w/WS2812 LEDs)
-    //   NEO_KHZ400  400 KHz (classic 'v1' (not v2) FLORA pixels, WS2811 drivers)
-    //   NEO_GRB     Pixels are wired for GRB bitstream (most NeoPixel products)
-    //   NEO_RGB     Pixels are wired for RGB bitstream (v1 FLORA pixels, not v2)
-    this->neoPixel = Adafruit_NeoPixel(N_PIXELS, STRIP_PIN, NEO_GRB + NEO_KHZ800);
-  
-    // This is only needed on 5V Arduinos (Uno, Leonardo, etc.).
-    // Connect 3.3V to mic AND TO AREF ON ARDUINO and enable this
-    // line.  Audio samples are 'cleaner' at 3.3V.
-    // COMMENT OUT THIS LINE FOR 3.3V ARDUINOS (FLORA, ETC.):
-    // analogReference(EXTERNAL);
-
-    this->neoPixel.begin();
-    this->neoPixel.setBrightness(30);
-    this->neoPixel.show(); // Initialize all pixels to 'off'
-  }
-
-  void showDebugLight(uint8_t r, uint8_t g, uint8_t b, unsigned long duration) {
-    Adafruit_NeoPixel ministrip = Adafruit_NeoPixel(1, STRIP_PIN, NEO_GRB + NEO_KHZ800);
-    ministrip.begin();
-
-    bool on = false;
-    unsigned long started = millis();
-
-    while((millis() - started) < duration) {
-      if(on) {
-        ministrip.setPixelColor(0, r, g, b);
-      } else {
-        ministrip.setPixelColor(0, 0, 0, 0);
-      }
-
-      ministrip.show();
-      on = !on;
-      delay(100);
-    }
-  }
-
-  void drawDot(LightStrip* strip) {
-    for (int i=0; i<N_PIXELS;i++)
-    {
-      if (i != strip->peak)
-      {
-        strip->neoPixel.setPixelColor(i, 0,0,0);
-      }
-      else
-      {
-        strip->neoPixel.setPixelColor(i, 255,255,255);
-      }
-    }
-    strip->neoPixel.show();
-  }
-
-  void off(bumblesLights::LightStrip* strip) {
-    if(strip->peak != N_PIXELS) {
-      strip->peak = N_PIXELS; // move outside
-      drawDot(strip);
-    }
-  }
-
-  void runningDotUp(LightStrip* strip) {
-    if(millis() - strip->lastTime >= DOT_RUN_MILLIS) {
-      strip->lastTime = millis();
-      drawDot(strip);
-   
-      if(strip->peak >= LAST_PIXEL_OFFSET) {
-        strip->peak = 0;
-      } else {
-        strip->peak++;
-      }
-    }
-  }
-
-  void runningDotDown(LightStrip* strip) {
-    if(millis() - strip->lastTime >= DOT_RUN_MILLIS) {
-      strip->lastTime = millis();
-      drawDot(strip);
-   
-      if(strip->peak <= 0) {
-        strip->peak = LAST_PIXEL_OFFSET;
-      } else {
-        strip->peak--;
-      }
-    }
-  }
-
-  uint32_t Wheel(LightStrip* strip, byte WheelPos) {
-    if(WheelPos < 85) {
-     return strip->neoPixel.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
-    } else if(WheelPos < 170) {
-     WheelPos -= 85;
-     return strip->neoPixel.Color(255 - WheelPos * 3, 0, WheelPos * 3);
-    } else {
-     WheelPos -= 170;
-     return strip->neoPixel.Color(0, WheelPos * 3, 255 - WheelPos * 3);
-    }
-}
-
-  void rainbow(LightStrip* strip) {
-    uint16_t i;
-
-    if(millis() - strip->lastTime >= DOT_RUN_MILLIS) {
-      strip->lastTime = millis();
-
-      if(strip->lvl >= 256) {
-        strip->lvl = 0;
-      } else {
-        strip->lvl++;
-      }
-
-      for(i=0; i < strip->neoPixel.numPixels(); i++) {
-        uint32_t wheelVal = Wheel(strip, (i+ strip->lvl) & 255);
-        strip->neoPixel.setPixelColor(i, wheelVal);
-      }
-      strip->neoPixel.show();
-    }
-  }
-
-  void colorWipe(LightStrip* strip, uint8_t r, uint8_t g, uint8_t b)
-  {
-    if (millis() - strip->lastTime >= DOT_RUN_MILLIS) {
-      strip->lastTime = millis();
-   
-      strip->neoPixel.setPixelColor(strip->peak, r, g, b);
-      strip->neoPixel.show();
-   
-      if(strip->peak >= LAST_PIXEL_OFFSET) {
-        strip->peak = 0;
-      } else {
-        strip->peak++;
-      }
-    }
-  }
-
-  void drawPattern(LightStrip* strip) {
-    switch(strip->mode) {
-      case MODE_OFF:
-        off(strip);
-        break;
-
-      case MODE_DOT_UP:
-        runningDotUp(strip);
-        break;
-
-      case MODE_DOT_DOWN:
-        runningDotDown(strip);
-        break;
-
-      case MODE_RAINBOW:
-        rainbow(strip);
-        break;
-
-      case MODE_WIPE_RED:
-        colorWipe(strip, 255, 0, 0);
-        break;
-
-      case MODE_WIPE_GREEN:
-        colorWipe(strip, 0, 255, 0);
-        break;
-   
-      case MODE_WIPE_BLUE:
-        colorWipe(strip, 0, 0, 255);
-        break;
-   
-      case MODE_WIPE_YELLOW:
-        colorWipe(strip, 255, 255, 0);
-        break;
-   
-      case MODE_WIPE_CYAN:
-        colorWipe(strip, 0, 255, 255);
-        break;
-   
-      case MODE_WIPE_MAGENTA:
-        colorWipe(strip, 255, 0, 255);
-      break;
-    }
-  }
-}
+#ifndef __AVR_ATtiny85__ //DON'T COMPILE THIS FOR TRINKET
+  #define LOGGING_ENABLED 1
+#endif
 
 namespace bumblesButtons {
   class Button {
@@ -298,10 +62,10 @@ namespace bumblesButtons {
      int pin;
      long lastOffTime; // the previous reading from the input pin
 
-     void init(int pin, bumblesLights::LightStrip* strip);
+     void init(int pin, LightStrip* strip);
   };
 
-  void Button::init(int pin, bumblesLights::LightStrip* strip) {
+  void Button::init(int pin, LightStrip* strip) {
     this->pin = pin;
     this->lastOffTime = millis();
 
@@ -310,7 +74,10 @@ namespace bumblesButtons {
 
   bool isPressed(Button* button) {
     byte reading = digitalRead(button->pin);
-    //Serial.println("Pin: " + String(button->pin) + ", Reading: " + String(reading));
+
+    #ifdef LOGGING_ENABLED
+      Serial.println("Pin: " + String(button->pin) + ", Reading: " + String(reading));
+    #endif
 
     // The idea here is to make sure that this is a "real" button press
     // not some accidental voltage across the pin. To do that we always
@@ -320,10 +87,15 @@ namespace bumblesButtons {
     // signifying that the button has been pressed.
 
     if (reading == HIGH) {
-      //Serial.println("Pin: " + String(button->pin) + " reading == HIGH");
+      #ifdef LOGGING_ENABLED
+        Serial.println("Pin: " + String(button->pin) + " reading == HIGH");
+      #endif
 
       if((millis() - button->lastOffTime) > DEBOUNCE_DELAY) {
-        //Serial.println("TRUE!!");
+        #ifdef LOGGING_ENABLED
+          Serial.println("Button pressed!");
+        #endif
+
         return true;
       }
     } else {
@@ -339,46 +111,53 @@ bumblesButtons::Button g_button2;
 bumblesButtons::Button g_button3;
 bumblesButtons::Button g_button4;
 
-bumblesLights::LightStrip g_strip;
+LightStrip* g_strip;
 
 void setup() {
-  //Serial.begin(9600); // USB is always 12 Mbit/sec
+  #ifdef LOGGING_ENABLED
+    Serial.begin(9600); // USB is always 12 Mbit/sec
+    Serial.println("Initializing everything...");
+  #endif
 
-  g_strip.init();
-  g_strip.mode = bumblesLights::MODE_DOT_UP;
+  g_strip = new LightStripNeoPixel();
+  g_strip->init();
+  g_strip->setMode(LightStripNeoPixel::MODE_DOT_UP);
 
-  g_button1.init(0, &g_strip);
-  g_button2.init(1, &g_strip);
-  g_button3.init(2, &g_strip);
+  g_button1.init(0, g_strip);
+  g_button2.init(1, g_strip);
+  g_button3.init(3, g_strip);
   //g_button4.init(, &g_strip);
  
-  if(!g_strip.neoPixel.getPixels()) {
-    bumblesLights::showDebugLight(255, 0, 0, 0xFFFFFFFF);
+  if(g_strip->isWorking()) {
+    g_strip->showDebugLight(255, 0, 0, 0xFFFFFFFF);
   }
 }
 
 void loop() {
-  byte oldMode = g_strip.mode;
+  byte oldMode = g_strip->getMode();
 
   if(bumblesButtons::isPressed(&g_button1)) {
-    g_strip.mode = bumblesLights::MODE_RAINBOW;
+    g_strip->setMode(LightStripNeoPixel::MODE_DOT_DOWN);
   } else if(bumblesButtons::isPressed(&g_button2)) {
-     g_strip.mode = bumblesLights::MODE_WIPE_RED;
+     g_strip->setMode(LightStripNeoPixel::MODE_DOT_UP);
   } else if(bumblesButtons::isPressed(&g_button3)) {
-    g_strip.mode = bumblesLights::MODE_WIPE_BLUE;
+    g_strip->setMode(LightStripNeoPixel::MODE_RAINBOW);
   } //else if(bumblesButtons::isPressed(&g_button4)) {
   //   g_strip.mode = bumblesLights::MODE_OFF;
   // }
 
-  //Serial.println("MODE: " + String(g_strip.mode) + " " + String(oldMode));
+  #ifdef LOGGING_ENABLED
+    Serial.println("MODE: " + String(g_strip->getMode()) + " " + String(oldMode));
+  #endif
 
-  if(g_strip.mode != oldMode) {
-    //Serial.println("MODE CHANGED");
-    g_strip.reset();
+  if(g_strip->getMode() != oldMode) {
+    #ifdef LOGGING_ENABLED
+      Serial.println("Resetting...");
+    #endif
+
+    g_strip->reset();
   }
 
-  bumblesLights::drawPattern(&g_strip);
-  //Serial.println("Loop");
-
-  //delay(300);  // do not print too fast!
+  g_strip->draw();
+  delay(600);
 }
